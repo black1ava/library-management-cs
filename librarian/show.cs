@@ -4,6 +4,8 @@ using static LibraryManagement.AppMenu;
 using System.Data;
 using System.Data.OracleClient;
 using static LibraryManagement.DatabaseConnection;
+using Pango;
+using static LibraryManagement.Length;
 
 namespace LibraryManagement {
   public class LibrarianShow: Window {
@@ -13,6 +15,11 @@ namespace LibraryManagement {
     private TreeStore treestore;
     private ScrolledWindow sw;
     private DatabaseConnection db;
+    private Label header;
+    private int selectedId;
+    private Button editButton;
+    private Button refreshButton;
+    private Button deleteButton;
 
     public LibrarianShow(): base("Librarians") {
       this.SetDefaultSize(1000, 800);
@@ -23,6 +30,13 @@ namespace LibraryManagement {
       this.container = new Fixed();
       this.Add(this.container);
       new AppMenu(this, this.container);
+
+      this.header = new Label("Librarians");
+      FontDescription fontDescription = new FontDescription();
+      fontDescription.Weight = Weight.Bold;
+      fontDescription.Size = 20 * 1024;
+      this.header.ModifyFont(fontDescription);
+      this.container.Put(this.header, 20, 30);
 
       this.treestore = new TreeStore(
         typeof(string),
@@ -41,6 +55,7 @@ namespace LibraryManagement {
       this.treeview = new TreeView();
       this.treeview.HeadersVisible = true;
       this.treeview.Model = this.treestore;
+      this.treeview.RowActivated += OnRowActivated;
 
       this.treeview.AppendColumn("ID", new CellRendererText(), "text", 0);
       this.treeview.AppendColumn("Name", new CellRendererText(), "text", 1);
@@ -59,7 +74,38 @@ namespace LibraryManagement {
 
       this.container.Put(this.sw, 0, 100);
 
+
+      this.editButton = new Button("Edit");
+      this.editButton.WidthRequest = 200;
+      this.editButton.Sensitive = false;
+      this.container.Put(this.editButton, 850, 100);
+
+      this.deleteButton = new Button("Delete");
+      this.deleteButton.WidthRequest= 200;
+      this.deleteButton.Sensitive = false;
+      this.container.Put(this.deleteButton, 850, 150);
+
+      this.refreshButton = new Button("Refresh");
+      this.refreshButton.WidthRequest = 200;
+      this.refreshButton.Clicked += new EventHandler(this.OnRefreshButtonClicked);
+      this.container.Put(this.refreshButton, 850, 200);
+
       this.ShowAll();
+    }
+
+    private void OnRefreshButtonClicked(object obj, EventArgs args){
+      this.Destroy();
+      new LibrarianShow();
+    }
+
+    private void OnRowActivated(object obj, RowActivatedArgs args){
+      TreeIter iter;
+      var model = treeview.Model;
+      model.GetIter(out iter, args.Path);
+      int id = Int32.Parse((model.GetValue(iter, 0)).ToString());
+      this.selectedId = id;
+      this.editButton.Sensitive = true;
+      this.deleteButton.Sensitive = true;
     }
 
     private void FetchData(){
