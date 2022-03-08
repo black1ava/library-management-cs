@@ -28,7 +28,7 @@ namespace LibraryManagement {
       this.header.ModifyFont(fontDescription);
       this.container.Put(this.header, 20, 30);
 
-      this.form = new LibrarianForm(this.container);
+      this.form = new LibrarianForm(this, this.container);
       
       this.createButton = new Button("Create");
       this.createButton.WidthRequest = Length.ButtonLength;

@@ -3,6 +3,9 @@ using Gtk;
 using Pango;
 using static LibraryManagement.Length;
 using static LibraryManagement.Home;
+using static LibraryManagement.DatabaseConnection;
+using System.Data;
+using System.Data.OracleClient;
 
 namespace LibraryManagement {
   public class Login: Window {
@@ -15,11 +18,14 @@ namespace LibraryManagement {
     private Entry passwordEntry;
     private Button loginButton;
     private Button emergencyLoginButton;
+    private DatabaseConnection db;
 
     public Login(): base("Login") {
       this.SetDefaultSize(800, 800);
 
       this.DeleteEvent += new DeleteEventHandler(this.Exit);
+
+      this.db = new DatabaseConnection();
 
       this.container = new Fixed();
       this.Add(this.container);
@@ -48,6 +54,7 @@ namespace LibraryManagement {
 
       this.loginButton = new Button("Login");
       this.loginButton.WidthRequest = Length.ButtonLength;
+      this.loginButton.Clicked += new EventHandler(this.OnLoginButtonClicked);
       this.container.Put(this.loginButton, 300, 450);
 
       this.emergencyLoginButton = new Button("Emergency login");
@@ -56,6 +63,58 @@ namespace LibraryManagement {
       this.container.Put(this.emergencyLoginButton, 300, 500);
 
       this.ShowAll();
+    }
+
+    private void OnLoginButtonClicked(object obj, EventArgs args){
+      OracleConnection connection = this.db.GetConnection();
+
+      try {
+        connection.Open();
+        string sql = "select count(librarianId) from tblLibrarian where username = '" + this.usernameEntry.Text + "' and userPassword = '" + this.passwordEntry.Text + "'";
+        OracleCommand command = new OracleCommand(sql, connection);
+        bool userExist = Int32.Parse((command.ExecuteScalar()).ToString()) != 0;
+        
+        MessageDialog md;
+
+        if(userExist){
+          md = new MessageDialog(
+            this,
+            DialogFlags.DestroyWithParent,
+            MessageType.Info,
+            ButtonsType.Ok,
+            "Login successfully"
+          );
+
+          md.Run();
+          md.Destroy();
+
+          this.Destroy();
+          new Home();
+        }else{
+          md = new MessageDialog(
+            this,
+            DialogFlags.DestroyWithParent,
+            MessageType.Error,
+            ButtonsType.Ok,
+            "Invalid username or password"
+          );
+
+          md.Run();
+          md.Destroy();
+        }
+
+      }catch(Exception ex){
+        MessageDialog md = new MessageDialog(
+          this,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          ex.Message
+        );
+
+        md.Run();
+        md.Destroy();
+      }
     }
 
     private void EmergencyButtonClicked(object obj, EventArgs args){

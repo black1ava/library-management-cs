@@ -4,6 +4,7 @@ using static LibraryManagement.Length;
 using static LibraryManagement.DatabaseConnection;
 using System.Data;
 using System.Data.OracleClient;
+using static LibraryManagement.LibrarianShow;
 
 namespace LibraryManagement {
   public class LibrarianForm {
@@ -32,10 +33,12 @@ namespace LibraryManagement {
     private Fixed container;
     private DatabaseConnection db;
     private string selectedGender;
+    private Window window;
 
-    public LibrarianForm(Fixed container) {
+    public LibrarianForm(Window window, Fixed container) {
 
       this.container = container;
+      this.window = window;
 
       this.db = new DatabaseConnection();
 
@@ -146,16 +149,47 @@ namespace LibraryManagement {
       try {
         if(this.passwordEntry.Text == this.confirmPassowrdEntry.Text){
           connection.Open();
-          string sql = "insert into tblLibrarian(librarianName, gender, dob, pob, address, phone, email, username, userPassword) values('" + this.nameEntry.Text + "', '" + this.selectedGender + "', '" + this.dobEntry.Text + "', '" + this.pobEntry.Text + "', '" + this.addressEntry.Text + "', '" + this.phoneEntry.Text + "', '" + this.emailEntry.Text + "', '" + this.usernameEntry.Text + "', '" + this.passwordEntry.Text + "')";
+          string sql = "insert into tblLibrarian(librarianName, gender, dob, pob, address, phone, email, username, userPassword) values('" + this.nameEntry.Text + "', '" + this.selectedGender + "', TO_DATE('" + this.dobEntry.Text + "', 'dd-mm-yyyy'), '" + this.pobEntry.Text + "', '" + this.addressEntry.Text + "', '" + this.phoneEntry.Text + "', '" + this.emailEntry.Text + "', '" + this.usernameEntry.Text + "', '" + this.passwordEntry.Text + "')";
           Console.WriteLine(sql);
           OracleCommand command = new OracleCommand(sql, connection);
           command.ExecuteNonQuery();
-          Console.WriteLine("Create a new librarian successfully");
+          connection.Close();
+
+          MessageDialog md = new MessageDialog(this.window, 
+            DialogFlags.DestroyWithParent,
+            MessageType.Info,
+            ButtonsType.Ok,
+            "Create a new librarian successfully"
+          );
+
+          md.Run();
+          md.Destroy();
+
+          this.window.Destroy();
+          new LibrarianShow();
         }else{
-          Console.WriteLine("Password is not matched");
+          MessageDialog md = new MessageDialog(
+            this.window,
+            DialogFlags.DestroyWithParent,
+            MessageType.Error,
+            ButtonsType.Ok,
+            "Password is not matched"
+          );
+
+          md.Run();
+          md.Destroy();
         }
       }catch(Exception ex){
-        Console.WriteLine(ex.Message);
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          "Create new librarian unsuccessfully. Please enter all of the fields"
+        );
+
+        md.Run();
+        md.Destroy();
       }
     }
 
