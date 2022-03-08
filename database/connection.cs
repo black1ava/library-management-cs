@@ -17,5 +17,9 @@ namespace LibraryManagement {
         Console.WriteLine("error: {0}", ex.Message);
       }
     }
+
+    public OracleConnection GetConnection(){
+      return this.connection;
+    }
   }
 }
