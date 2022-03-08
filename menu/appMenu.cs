@@ -1,5 +1,6 @@
 using System;
 using Gtk;
+using static LibraryManagement.NewLibrarian;
 
 namespace LibraryManagement {
   public class AppMenu {
@@ -12,8 +13,12 @@ namespace LibraryManagement {
     private MenuItem librarian;
     private MenuItem newLibrarian;
     private MenuItem allLibrarians;
+    private Window window;
 
     public AppMenu(Window window, Fixed container){
+
+      this.window = window;
+
       this.menuBar = new MenuBar();
 
       this.fileMenu = new Menu();
@@ -31,12 +36,18 @@ namespace LibraryManagement {
       this.menuBar.Append(this.librarian);
 
       this.newLibrarian = new MenuItem("New librarian");
+      this.newLibrarian.Activated += OnNewLibrarianActivated;
       this.librarianMenu.Append(this.newLibrarian);
 
       this.allLibrarians = new MenuItem("All librarians");
       this.librarianMenu.Append(this.allLibrarians);
 
       container.Put(menuBar, 0, 0);
+    }
+
+    private void OnNewLibrarianActivated(object obj, EventArgs args){
+      this.window.Destroy();
+      new NewLibrarian();
     }
 
     private void OnExitMenuActivated(object obj, EventArgs args){
