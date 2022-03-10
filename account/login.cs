@@ -6,6 +6,7 @@ using static LibraryManagement.Home;
 using static LibraryManagement.DatabaseConnection;
 using System.Data;
 using System.Data.OracleClient;
+using static LibraryManagement.LibrarianAccount;
 
 namespace LibraryManagement {
   public class Login: Window {
@@ -70,9 +71,11 @@ namespace LibraryManagement {
 
       try {
         connection.Open();
-        string sql = "select count(librarianId) from tblLibrarian where username = '" + this.usernameEntry.Text + "' and userPassword = '" + this.passwordEntry.Text + "'";
+        string sql = "select * from tblLibrarian where username = '" + this.usernameEntry.Text + "' and userPassword = '" + this.passwordEntry.Text + "'";
         OracleCommand command = new OracleCommand(sql, connection);
-        bool userExist = Int32.Parse((command.ExecuteScalar()).ToString()) != 0;
+        OracleDataReader reader = command.ExecuteReader();
+        bool userExist = reader.Read();
+        LibrarianAccount.LibrarianId = Int32.Parse((reader["librarianId"]).ToString());
         
         MessageDialog md;
 

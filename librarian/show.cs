@@ -7,6 +7,7 @@ using static LibraryManagement.DatabaseConnection;
 using Pango;
 using static LibraryManagement.Length;
 using static LibraryManagement.LibrarianEdit;
+using static LibraryManagement.LibrarianAccount;
 
 namespace LibraryManagement {
   public class LibrarianShow: Window {
@@ -85,6 +86,7 @@ namespace LibraryManagement {
       this.deleteButton = new Button("Delete");
       this.deleteButton.WidthRequest= 200;
       this.deleteButton.Sensitive = false;
+      this.deleteButton.Clicked += new EventHandler(this.OnDeleteButtonClicked);
       this.container.Put(this.deleteButton, 850, 150);
 
       this.refreshButton = new Button("Refresh");
@@ -93,6 +95,46 @@ namespace LibraryManagement {
       this.container.Put(this.refreshButton, 850, 200);
 
       this.ShowAll();
+    }
+
+    private void OnDeleteButtonClicked(object obj, EventArgs args){
+      if(LibrarianAccount.LibrarianId != this.selectedId){
+        MessageDialog md = new MessageDialog(
+          this,
+          DialogFlags.DestroyWithParent,
+          MessageType.Warning,
+          ButtonsType.YesNo,
+          "Are you sure you want to delete this librarian? This action cannot be undone."
+        );
+
+        ResponseType result = (ResponseType)md.Run();
+
+        if(result == ResponseType.Yes){
+          OracleConnection connection = this.db.GetConnection();
+          string sql = "delete from tblLibrarian where librarianId = " + this.selectedId;
+
+          connection.Open();
+
+          OracleCommand command = new OracleCommand(sql, connection);
+          command.ExecuteNonQuery();
+
+          md.Destroy();
+          new LibrarianShow();
+
+        }else{
+          md.Destroy();
+        }
+      }else{
+        MessageDialog md = new MessageDialog(
+          this,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          "You cannot delete this librarian. If you want to delete this librarian, please login with other account"
+        );
+
+        md.Run();
+        md.Destroy();      }
     }
 
     private void OnEditButtonClicked(object obj, EventArgs args){
