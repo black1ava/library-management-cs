@@ -57,6 +57,7 @@ namespace LibraryManagement {
       this.treeview = new TreeView();
       this.treeview.HeadersVisible = true;
       this.treeview.Model = this.treestore;
+      this.treeview.EnableGridLines = TreeViewGridLines.Both;
       this.treeview.RowActivated += OnRowActivated;
 
       this.treeview.AppendColumn("ID", new CellRendererText(), "text", 0);

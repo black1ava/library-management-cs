@@ -2,6 +2,8 @@ using System;
 using Gtk;
 using static LibraryManagement.NewLibrarian;
 using static LibraryManagement.LibrarianShow;
+using static LibraryManagement.AuthorShow;
+using static LibraryManagement.NewAuthor;
 
 namespace LibraryManagement {
   public class AppMenu {
@@ -14,6 +16,10 @@ namespace LibraryManagement {
     private MenuItem librarian;
     private MenuItem newLibrarian;
     private MenuItem allLibrarians;
+    private Menu authorMenu;
+    private MenuItem author;
+    private MenuItem newAuthor;
+    private MenuItem allAuthors;
     private Window window;
 
     public AppMenu(Window window, Fixed container){
@@ -44,8 +50,31 @@ namespace LibraryManagement {
       this.allLibrarians.Activated += OnAllLibrariansActivated;
       this.librarianMenu.Append(this.allLibrarians);
 
+      this.authorMenu = new Menu();
+      this.author = new MenuItem("Author");
+      this.author.Submenu = this.authorMenu;
+      this.menuBar.Append(this.author);
+
+      this.newAuthor = new MenuItem("New author");
+      this.newAuthor.Activated += OnNewAuthorActivated;
+      this.authorMenu.Append(this.newAuthor);
+      
+      this.allAuthors = new MenuItem("All authors");
+      this.allAuthors.Activated += OnAllAuthorsActivated;
+      this.authorMenu.Append(this.allAuthors);
+
       container.Put(menuBar, 0, 0);
     }
+
+    private void OnNewAuthorActivated(object obj, EventArgs args){
+      this.window.Destroy();
+      new NewAuthor();
+    }
+
+    private void OnAllAuthorsActivated(object obj, EventArgs args){
+      this.window.Destroy();
+      new AuthorShow();
+    }   
 
     private void OnAllLibrariansActivated(object obj, EventArgs args){
       this.window.Destroy();
