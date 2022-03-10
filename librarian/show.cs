@@ -6,6 +6,7 @@ using System.Data.OracleClient;
 using static LibraryManagement.DatabaseConnection;
 using Pango;
 using static LibraryManagement.Length;
+using static LibraryManagement.LibrarianEdit;
 
 namespace LibraryManagement {
   public class LibrarianShow: Window {
@@ -78,6 +79,7 @@ namespace LibraryManagement {
       this.editButton = new Button("Edit");
       this.editButton.WidthRequest = 200;
       this.editButton.Sensitive = false;
+      this.editButton.Clicked += new EventHandler(this.OnEditButtonClicked);
       this.container.Put(this.editButton, 850, 100);
 
       this.deleteButton = new Button("Delete");
@@ -91,6 +93,11 @@ namespace LibraryManagement {
       this.container.Put(this.refreshButton, 850, 200);
 
       this.ShowAll();
+    }
+
+    private void OnEditButtonClicked(object obj, EventArgs args){
+      this.Destroy();
+      new LibrarianEdit(this.selectedId);
     }
 
     private void OnRefreshButtonClicked(object obj, EventArgs args){

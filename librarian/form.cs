@@ -34,6 +34,8 @@ namespace LibraryManagement {
     private DatabaseConnection db;
     private string selectedGender;
     private Window window;
+    private int existingId;
+    private bool isPasswordSectionRemoved = false;
 
     public LibrarianForm(Window window, Fixed container) {
 
@@ -129,7 +131,11 @@ namespace LibraryManagement {
     }
 
     public void setUpButton(Button button, string status = "new"){
-      this.container.Put(button, 240, 600);
+      if(this.isPasswordSectionRemoved){
+        this.container.Put(button, 240, 500);
+      }else{
+        this.container.Put(button, 240, 600);
+      }
 
       switch(status){
         case "new":
@@ -141,6 +147,34 @@ namespace LibraryManagement {
         default:
           break;
       }
+    }
+
+    public void RemovePasswordSection(){
+      this.isPasswordSectionRemoved = true;
+      this.container.Remove(this.passwordLabel);
+      this.container.Remove(this.passwordEntry);
+      this.container.Remove(this.confirmPassowrdEntry);
+      this.container.Remove(this.confirmPasswordLabel);
+    }
+
+    public void InsertExistingData(OracleDataReader reader){
+      this.existingId = Int32.Parse((reader["librarianId"]).ToString());
+      this.nameEntry.Text = (reader["librarianName"]).ToString();
+
+      if((reader["gender"]).ToString() == "M"){
+        this.genderMaleRadioButton.Active = true;
+        this.selectedGender = "M";
+      }else{
+        this.genderFemaleRadioButton.Active = true;
+        this.selectedGender = "F";
+      }
+
+      this.dobEntry.Text = (reader["dob"]).ToString();
+      this.pobEntry.Text = (reader["pob"]).ToString();
+      this.addressEntry.Text = (reader["address"]).ToString();
+      this.phoneEntry.Text = (reader["phone"]).ToString();
+      this.emailEntry.Text = (reader["email"]).ToString();
+      this.usernameEntry.Text = (reader["username"]).ToString();
     }
 
     private void onNewButtonClicked(object obj, EventArgs args){
@@ -194,7 +228,51 @@ namespace LibraryManagement {
     }
 
     private void onUpdateButtonClicked(object obj, EventArgs args){
-      Console.WriteLine("update");
+      OracleConnection connection = this.db.GetConnection();
+      string sql = "update tblLibrarian set librarianName = '" + this.nameEntry.Text + "', gender = '" + this.selectedGender + "', dob = TO_DATE('" + this.dobEntry.Text + "', 'dd/mm/yyyy HH:MI:SS AM'), pob = '" + this.pobEntry.Text + "', address = '" + this.addressEntry.Text + "', phone = '" + this.phoneEntry.Text + "', email = '" + this.emailEntry.Text + "', username = '" + this.usernameEntry.Text + "' where librarianId = " + this.existingId;
+
+      try {
+        connection.Open();
+        OracleCommand command = new OracleCommand(sql, connection);
+        command.ExecuteNonQuery();
+
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Info,
+          ButtonsType.Ok,
+          "Update a librarian successfully"
+        );
+
+        md.Run();
+        md.Destroy();
+
+        this.window.Destroy();
+        new LibrarianShow();
+
+      }catch(Exception ex){
+
+        string message;
+
+        if(ex.Message.Contains("ORA-00001")){
+          message = "The username/email/phone is already taken";
+        }else if(ex.Message.Contains("ORA-01407")){
+          message = "Please input all the required fields";
+        }else{
+          message = ex.Message;
+        }
+
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          message
+        );
+
+        md.Run();
+        md.Destroy();
+      }
     }
   }
 }
