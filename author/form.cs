@@ -1,6 +1,9 @@
 using System;
 using Gtk;
+using System.Data;
+using System.Data.OracleClient;
 using static LibraryManagement.Length;
+using static LibraryManagement.DatabaseConnection;
 
 namespace LibraryManagement {
   public class AuthorForm {
@@ -24,10 +27,14 @@ namespace LibraryManagement {
     private Entry emailEntry;
     private Button createButton;
     private Button updateButton;
+    private DatabaseConnection db;
+    private string selectedGender;
+    private int selectedId;
 
     public AuthorForm(Window window, Fixed container, string status = "new"){
       this.window = window;
       this.container = container;
+      this.db = new DatabaseConnection();
 
       this.nameLabel = new Label("Name");
       this.container.Put(this.nameLabel, 20, 100);
@@ -41,6 +48,8 @@ namespace LibraryManagement {
 
       this.maleGenderRadioButton = new RadioButton("Male");
       this.maleGenderRadioButton.Active = true;
+      this.selectedGender = "M";
+      this.maleGenderRadioButton.Toggled += new EventHandler(this.OnMaleGenderRadioButtonToggled);
       this.container.Put(this.maleGenderRadioButton, 240, 150);
 
       this.femaleGenderRadioButton = new RadioButton(this.maleGenderRadioButton, "Female");
@@ -84,11 +93,113 @@ namespace LibraryManagement {
       if(status == "new"){
         this.createButton = new Button("Create");
         this.createButton.WidthRequest = Length.ButtonLength;
+        this.createButton.Clicked += new EventHandler(this.OnCreateButtonClicked);
         this.container.Put(this.createButton, 240, 450);
       }else{
         this.updateButton = new Button("Update");
         this.updateButton.WidthRequest = Length.ButtonLength;
+        this.updateButton.Clicked += new EventHandler(this.OnUpdateButtonClicked);
         this.container.Put(this.updateButton, 240, 450);
+      }
+    }
+
+    private void OnUpdateButtonClicked(object obj, EventArgs args){
+      OracleConnection connection = this.db.GetConnection();
+      string sql  = "update tblAuthor set authorName = '" + this.nameEntry.Text + "', gender = '" + this.selectedGender + "', dob = TO_DATE('" + this.dobEntry.Text + "', 'dd/mm/yyyy HH:MI:SS AM'), pob = '" + this.pobEntry.Text + "', address = '" + this.addressEntry.Text + "', phone = '" + this.phoneEntry.Text + "', email = '" + this.emailEntry.Text + "' where authorId = " + this.selectedId;
+      
+      try {
+        connection.Open();
+        OracleCommand command = new OracleCommand(sql, connection);
+        command.ExecuteNonQuery();
+        connection.Close();
+
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Info,
+          ButtonsType.Ok,
+          "Update an author successfully"
+        );
+
+        md.Run();
+        md.Destroy();
+        this.window.Destroy();
+        new AuthorShow();
+      }catch(Exception ex){
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          ex.Message
+        );
+
+        md.Run();
+        md.Destroy();
+      }
+    }
+
+    public void InsertExistingData(OracleDataReader reader){
+      this.selectedId = Int32.Parse((reader["authorId"]).ToString());
+      this.nameEntry.Text = (reader["authorName"]).ToString();
+
+      if((reader["gender"]).ToString() == "M"){
+        this.maleGenderRadioButton.Active = true;
+      }else{
+        this.femaleGenderRadioButton.Active = true;
+      }
+
+      this.dobEntry.Text = (reader["dob"]).ToString();
+      this.pobEntry.Text = (reader["pob"]).ToString();
+      this.addressEntry.Text = (reader["address"]).ToString();
+      this.phoneEntry.Text = (reader["phone"]).ToString();
+      this.emailEntry.Text = (reader["email"]).ToString();
+    }
+
+    private void OnMaleGenderRadioButtonToggled(object obj, EventArgs args){
+      if(this.maleGenderRadioButton.Active){
+        this.selectedGender = "M";
+      }else{
+        this.selectedGender = "F";
+      }
+    }
+
+    private void OnCreateButtonClicked(object obj, EventArgs args){
+      OracleConnection connection = this.db.GetConnection();
+      string sql = "insert into tblAuthor(authorName, gender, dob, pob, address, phone, email) values('" + this.nameEntry.Text + "', '" + this.selectedGender + "', TO_DATE('" + this.dobEntry.Text + "', 'DD-MM-YYYY'), '" + this.pobEntry.Text + "', '" + this.addressEntry.Text + "', '" + this.phoneEntry.Text + "', '" + this.emailEntry.Text + "')";
+      
+      try {
+        connection.Open();
+        OracleCommand command = new OracleCommand(sql, connection);
+        command.ExecuteNonQuery();
+
+        connection.Close();
+
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Info,
+          ButtonsType.Ok,
+          "Create a new author successfully"
+        );
+
+        md.Run();
+        md.Destroy();
+
+        this.window.Destroy();
+
+        new AuthorShow();
+      }catch(Exception ex){
+        MessageDialog md = new MessageDialog(
+          this.window,
+          DialogFlags.DestroyWithParent,
+          MessageType.Error,
+          ButtonsType.Ok,
+          ex.Message
+        );
+
+        md.Run();
+        md.Destroy();
       }
     }
   }
